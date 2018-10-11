@@ -1,31 +1,9 @@
-# Pre-requisites
-Install-Module CredentialManager -Force
-Install-Module dbatools -Force
-
-Import-Module CredentialManager
-Import-Module dbatools
-
-
-Get-Module 
-
-Set-Location C:\
-
-
-# set credentials to connect to SQL instances
-$cred = Get-StoredCredential -Target "SqlDocker"
-
-if (!$cred){
-    New-StoredCredential -Target "SqlDocker" -UserName "sa" -Password "Testing1122" -Persist Session
-}
-
-
-$cred = Get-StoredCredential -Target "SqlDocker"
 
 # https://dbafromthecold.com/2016/11/16/sql-server-containers-part-one/
 
 
 # verify docker service is running
-Get-Service *docker*
+systemctl status docker
 
 
 
@@ -68,10 +46,18 @@ docker logs testcontainer1
 
 
 
-# check version of SQL
-Connect-DbaInstance -SqlInstance 'localhost,15111' -Credential $cred `
-    | Select-Object Product, HostDistribution, HostPlatform, Version
+# connect to sql instance
+mssql-cli -S 'localhost,15111' -U sa 
 
+
+
+# get sql version
+SELECT @@VERSION;
+
+
+
+# exit mssql-cli
+exit
 
 
 
@@ -81,9 +67,8 @@ docker exec -it testcontainer1 bash
 
 
 # copy a backup file into the container
-$filepath = "C:\Git\dbafromthecold\SQLServerAndContainersDemo\DatabaseBackup"
-docker cp $filepath\DatabaseA.bak `
-        testcontainer1:'/var/opt/mssql/data/'
+docker cp ~/git/SQLServerAndContainersDemo/DatabaseBackup/DatabaseA.bak \
+        testcontainer1:/var/opt/mssql/data/
 
 
  
@@ -92,18 +77,23 @@ docker exec -it testcontainer1 bash
 
 
 
-# restore database in container
-Restore-DbaDatabase -SqlInstance 'localhost,15111' `
-    -SqlCredential $cred `
-        -Path '/var/opt/mssql/data/DatabaseA.bak' `
-            -DestinationDataDirectory '/var/opt/mssql/data/' `
-                -DestinationLogDirectory '/var/opt/mssql/log'
+# connect to sql instance
+mssql-cli -S 'localhost,15111' -U sa 
 
-            
+
+
+# restore database in container          
+RESTORE DATABASE [DatabaseA] FROM DISK = '/var/opt/mssql/data/DatabaseA.bak'
+
+
 
 # check databases in container
-Get-DbaDatabase -SqlInstance 'localhost,15111' -SqlCredential $Cred `
-    | Select-Object Name  
+select name from sys.databases;
+
+
+
+# exit mssql-cli
+exit
 
 
     
