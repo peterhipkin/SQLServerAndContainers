@@ -9,3 +9,4 @@ Code and supporting files for my SQL Server & Containers session
 1. Create the folder:- New-Item C:\Git\dbafromthecold -Type Directory
 2. Navigate to the folder:- cd C:\Git\dbafromthecold
 3. clone the repo:- git clone https://github.com/dbafromthecold/SQLServerAndContainersDemo.git
+4. Switch to the windows branch - git checkout windows
